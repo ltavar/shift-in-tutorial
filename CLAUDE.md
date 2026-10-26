@@ -49,6 +49,8 @@ least one SLI (latency or correctness first) is enforced as a CI gate.
   never a threshold to loosen or a test to skip. The same goes for the 50 ms p95 in SLI 1.
 - Changes to the follow handler, URL validation or click counting are proven by hand mutation, per
   `docs/test-strategy.md`: break the code on purpose and show the named test fails.
+- A turn never ends with a failing test. If a test is red, fix it, or say clearly that you could
+  not and which test. (Strict `xfail` tests marking known open findings are not red.)
 - Known roadmap item: **link expiry** (owners want links that stop working after a chosen time).
   Build it via Example Mapping, with SLI impact in the acceptance criteria.
 
@@ -58,7 +60,7 @@ least one SLI (latency or correctness first) is enforced as a CI gate.
 - Run: `uvicorn snip.main:app --reload --app-dir src` (inside a venv, after `pip install -e .`).
 - API surface: `POST /api/links`, `GET /api/links`, `GET /api/links/{code}/stats`, `GET /{code}`.
   Keep the `/api` prefix for management endpoints; the bare `/{code}` path is reserved for follows.
-- Test tooling (pytest, pytest-cov, robotframework) is not yet in `pyproject.toml`; add it when
-  tests are introduced.
+- Run the suite: `pip install -e ".[test]"`, then `pytest tests/unit tests/api`. Robot Framework
+  (system tests) is not set up yet.
 - Click counting happens on the follow path and nowhere else; the stats endpoint only reads it
   (SLI 5 depends on this). Don't add a second place that increments.
