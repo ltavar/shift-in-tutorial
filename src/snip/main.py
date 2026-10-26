@@ -5,13 +5,19 @@ Run locally:
 OpenAPI docs at /docs, schema at /openapi.json
 """
 
-from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from . import shortener
 from .models import CreateLinkRequest, LinkResponse
+from .store import LinkNotFound
 
 app = FastAPI(title="snip", version="0.1.0", description="A tiny URL shortener.")
+
+
+@app.exception_handler(LinkNotFound)
+def link_not_found(request: Request, exc: LinkNotFound) -> JSONResponse:
+    return JSONResponse(status_code=404, content={"detail": "Link not found"})
 
 
 @app.post("/api/links", response_model=LinkResponse, status_code=201)

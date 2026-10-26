@@ -3,6 +3,10 @@
 from dataclasses import dataclass, field
 
 
+class LinkNotFound(KeyError):
+    """No link exists for the requested code."""
+
+
 @dataclass
 class LinkRecord:
     code: str
@@ -18,7 +22,10 @@ class Store:
         self._links[record.code] = record
 
     def get(self, code: str) -> LinkRecord:
-        return self._links[code]
+        try:
+            return self._links[code]
+        except KeyError:
+            raise LinkNotFound(code) from None
 
     def exists(self, code: str) -> bool:
         return code in self._links
