@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" # the floor in pyproject.toml (requires-python >= 3.11)
+
+      # Step 1 runs BEFORE any test tooling is installed, on purpose.
+      #
+      # The test extra (pytest, pytest-cov, httpx) is what every later step needs, and once
+      # it is installed it can hide two production defects: a runtime dependency missing from
+      # [project].dependencies (it would "work" only because a test tool dragged it in), and
+      # application code importing a test-only package. snip ships with just fastapi and
+      # uvicorn, so this is the only step that proves what users actually get. Installing
+      # non-editable (`pip install .`) also builds the wheel, so it catches a broken package
+      # layout that an editable install would paper over.
+      - name: "1. Install production dependencies only and check the app imports"
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+          pip list
+          python -c "import snip.main; print('imported', snip.main.app.title)"
+
+      - name: "2. Unit and API tests"
+        run: |
+          pip install -e ".[test]"
+          pytest tests/unit tests/api -q
+
+      - name: "3. SLI gate - redirect latency (SLI 1, p95 < 50 ms)"
+        run: pytest tests/gates -q
